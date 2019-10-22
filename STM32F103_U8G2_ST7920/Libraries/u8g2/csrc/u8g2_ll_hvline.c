@@ -59,7 +59,7 @@
 */
 
 
-#ifdef U8G2_HVLINE_SPEED_OPTIMIZATION
+#ifdef U8G2_WITH_HVLINE_SPEED_OPTIMIZATION
 
 /*
   x,y		Upper left position of the line within the local buffer (not the display!)
@@ -75,6 +75,9 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
   uint8_t *ptr;
   uint8_t bit_pos, mask;
   uint8_t or_mask, xor_mask;
+#ifdef __unix
+  uint8_t *max_ptr = u8g2->tile_buf_ptr + u8g2_GetU8x8(u8g2)->display_info->tile_width*u8g2->tile_buf_height*8;
+#endif
 
   //assert(x >= u8g2->buf_x0);
   //assert(x < u8g2_GetU8x8(u8g2)->display_info->tile_width*8);
@@ -104,48 +107,26 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
   
   if ( dir == 0 )
   {
-  /*
-    if ( u8g2->draw_color != 0 )
-    {
-    */
       do
       {
-	//*ptr |= mask;
+#ifdef __unix
+	assert(ptr < max_ptr);
+#endif
 	*ptr |= or_mask;
 	*ptr ^= xor_mask;
 	ptr++;
 	len--;
       } while( len != 0 );
-      /*
-    }
-    else
-    {
-      mask = ~mask;
-      do
-      {
-	*ptr &= mask;
-	ptr++;
-	len--;
-      } while( len != 0 );
-    }  
-    */
   }
   else
   {    
     do
     {
+#ifdef __unix
+      assert(ptr < max_ptr);
+#endif
       *ptr |= or_mask;
       *ptr ^= xor_mask;
-      /*
-      if ( u8g2->draw_color != 0 )
-      {
-	*ptr |= mask;
-      }
-      else
-      {
-	*ptr &= ~mask;
-      }
-      */
       
       bit_pos++;
       bit_pos &= 7;
@@ -155,26 +136,7 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
       if ( bit_pos == 0 )
       {
 	ptr+=u8g2->pixel_buf_width;	/* 6 Jan 17: Changed u8g2->width to u8g2->pixel_buf_width, issue #148 */
-	
-	/* another speed optimization, but requires about 60 bytes on AVR */
-	/*
-	while( len >= 8 )
-	{
-	  if ( u8g2->draw_color != 0 )
-	  {
-	    *ptr = 255;
-	  }
-	  else
-	  {
-	    *ptr = 0;
-	  }
-	  len -= 8;
-	  ptr+=u8g2->width;
-	}
-	*/
-	
-	//mask = 1;
-	
+		
 	if ( u8g2->draw_color <= 1 )
 	  or_mask  = 1;
 	if ( u8g2->draw_color != 1 )
@@ -182,7 +144,6 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
       }
       else
       {
-	//mask <<= 1;
 	or_mask <<= 1;
 	xor_mask <<= 1;
       }
@@ -192,7 +153,7 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
 
 
 
-#else /* U8G2_HVLINE_SPEED_OPTIMIZATION */
+#else /* U8G2_WITH_HVLINE_SPEED_OPTIMIZATION */
 
 /*
   x,y position within the buffer
@@ -227,17 +188,6 @@ static void u8g2_draw_pixel_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_u
   if ( u8g2->draw_color != 1 )
     *ptr ^= mask;
 
-/*  
-  if ( u8g2->draw_color != 0 )
-  {
-    *ptr |= mask;
-  }
-  else
-  {
-    mask ^= 255;
-    *ptr &= mask;
-  }
-*/  
 }
 
 /*
@@ -271,7 +221,7 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
 }
 
 
-#endif /* U8G2_HVLINE_SPEED_OPTIMIZATION */
+#endif /* U8G2_WITH_HVLINE_SPEED_OPTIMIZATION */
 
 /*=================================================*/
 /*
@@ -279,7 +229,7 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
     ST7920
 */
 
-#ifdef U8G2_HVLINE_SPEED_OPTIMIZATION
+#ifdef U8G2_WITH_HVLINE_SPEED_OPTIMIZATION
 
 /*
   x,y		Upper left position of the line within the local buffer (not the display!)
@@ -290,6 +240,7 @@ void u8g2_ll_hvline_vertical_top_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y,
     all clipping done
 */
 
+/* SH1122, LD7032, ST7920, ST7986, LC7981, T6963, SED1330, RA8835, MAX7219, LS0 */ 
 void u8g2_ll_hvline_horizontal_right_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t len, uint8_t dir)
 {
   uint16_t offset;
@@ -347,12 +298,13 @@ void u8g2_ll_hvline_horizontal_right_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_
   }
 }
 
-#else /* U8G2_HVLINE_SPEED_OPTIMIZATION */
+#else /* U8G2_WITH_HVLINE_SPEED_OPTIMIZATION */
 
 
 /*
   x,y position within the buffer
 */
+/* SH1122, LD7032, ST7920, ST7986, LC7981, T6963, SED1330, RA8835, MAX7219, LS0 */ 
 static void u8g2_draw_pixel_horizontal_right_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y)
 {
   uint16_t offset;
@@ -393,6 +345,7 @@ static void u8g2_draw_pixel_horizontal_right_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8
   asumption: 
     all clipping done
 */
+/* SH1122, LD7032, ST7920, ST7986, LC7981, T6963, SED1330, RA8835, MAX7219, LS0 */ 
 void u8g2_ll_hvline_horizontal_right_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t len, uint8_t dir)
 {
   if ( dir == 0 )
@@ -415,4 +368,4 @@ void u8g2_ll_hvline_horizontal_right_lsb(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_
   }
 }
 
-#endif /* U8G2_HVLINE_SPEED_OPTIMIZATION */
+#endif /* U8G2_WITH_HVLINE_SPEED_OPTIMIZATION */

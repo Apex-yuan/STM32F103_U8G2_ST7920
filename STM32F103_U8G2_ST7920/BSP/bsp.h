@@ -82,6 +82,8 @@
    
 #include "bsp_systick.h"
 #include "bsp_usart.h"
+#include "bsp_tim.h"
+#include "bsp_key.h"
 //#include "bsp_hc_sr04.h"
 
 void bsp_init(void);
